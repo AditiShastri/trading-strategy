@@ -6,11 +6,10 @@ import time
 import requests
 
 # --- Core Strategy Logic (adapted from your scripts) ---
-
+"""
+Fetches Nifty 50 symbols dynamically from NSE India. Falls back to static list if request fails.
+"""   
 def get_nifty50_symbols():
-    """
-    Fetches Nifty 50 symbols dynamically from NSE India. Falls back to static list if request fails.
-    """
     url = "https://www.nseindia.com/api/equity-stockIndices?index=NIFTY%2050"
     headers = {
         "User-Agent": "Mozilla/5.0",
@@ -20,31 +19,37 @@ def get_nifty50_symbols():
     }
     try:
         with requests.Session() as s:
-            s.get("https://www.nseindia.com", headers=headers)  # Set cookies
+            # Visit homepage to get cookies
+            s.get("https://www.nseindia.com", headers=headers, timeout=10)
             response = s.get(url, headers=headers, timeout=10)
-
-            st.warning(response.text)  # debug nse call
-        
-            data = response.json()
-            symbols = [item['symbol'] + ".NS" for item in data['data']]
+            if response.status_code != 200 or not response.text.strip():
+                print(f"Request failed: {response.status_code}")
+                print(f"Content: {response.text[:500]}")
+                raise Exception("Empty or invalid response from NSE API")
+            try:
+                data = response.json()
+            except Exception:
+                print(f"Non-JSON content: {response.text[:500]}")
+                raise Exception("Response was not JSON, likely blocked or redirected")
+            symbols = [item['symbol'] + ".NS" for item in data.get('data', [])]
             if symbols:
                 return symbols
     except Exception as e:
-
-        st.warning(f"Could not fetch Nifty 50 symbols dynamically: {e}. Using static list.")
-    # Fallback static list
-    return [
-        'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'ICICIBANK.NS', 'INFY.NS',
-        'HINDUNILVR.NS', 'BHARTIARTL.NS', 'ITC.NS', 'SBIN.NS', 'LICI.NS',
-        'BAJFINANCE.NS', 'HCLTECH.NS', 'KOTAKBANK.NS', 'MARUTI.NS', 'LT.NS',
-        'ASIANPAINT.NS', 'AXISBANK.NS', 'SUNPHARMA.NS', 'WIPRO.NS', 'ULTRACEMCO.NS',
-        'NESTLEIND.NS', 'BAJAJFINSV.NS', 'ADANIENT.NS', 'NTPC.NS', 'M&M.NS',
-        'JSWSTEEL.NS', 'TATAMOTORS.NS', 'POWERGRID.NS', 'TITAN.NS', 'TATASTEEL.NS',
-        'ADANIPORTS.NS', 'COALINDIA.NS', 'ONGC.NS', 'INDUSINDBK.NS', 'HINDALCO.NS',
-        'BRITANNIA.NS', 'CIPLA.NS', 'DRREDDY.NS', 'EICHERMOT.NS', 'GRASIM.NS',
-        'HEROMOTOCO.NS', 'BPCL.NS', 'DIVISLAB.NS', 'BAJAJ-AUTO.NS', 'APOLLOHOSP.NS',
-        'TECHM.NS', 'UPL.NS', 'SHREECEM.NS', 'HDFCLIFE.NS', 'TATACONSUM.NS'
-    ]
+        print(f"Error: {e}")
+        # Return fallback static list here if desired
+        return [
+            'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'ICICIBANK.NS', 'INFY.NS',
+            'HINDUNILVR.NS', 'BHARTIARTL.NS', 'ITC.NS', 'SBIN.NS', 'LICI.NS',
+            'BAJFINANCE.NS', 'HCLTECH.NS', 'KOTAKBANK.NS', 'MARUTI.NS', 'LT.NS',
+            'ASIANPAINT.NS', 'AXISBANK.NS', 'SUNPHARMA.NS', 'WIPRO.NS', 'ULTRACEMCO.NS',
+            'NESTLEIND.NS', 'BAJAJFINSV.NS', 'ADANIENT.NS', 'NTPC.NS', 'M&M.NS',
+            'JSWSTEEL.NS', 'TATAMOTORS.NS', 'POWERGRID.NS', 'TITAN.NS', 'TATASTEEL.NS',
+            'ADANIPORTS.NS', 'COALINDIA.NS', 'ONGC.NS', 'INDUSINDBK.NS', 'HINDALCO.NS',
+            'BRITANNIA.NS', 'CIPLA.NS', 'DRREDDY.NS', 'EICHERMOT.NS', 'GRASIM.NS',
+            'HEROMOTOCO.NS', 'BPCL.NS', 'DIVISLAB.NS', 'BAJAJ-AUTO.NS', 'APOLLOHOSP.NS',
+            'TECHM.NS', 'UPL.NS', 'SHREECEM.NS', 'HDFCLIFE.NS', 'TATACONSUM.NS'
+        ]
+        
 
 @st.cache_data(ttl=3600) # Cache data for 1 hour
 def get_historical_data(symbol, start_date, end_date):
