@@ -22,12 +22,15 @@ def get_nifty50_symbols():
         with requests.Session() as s:
             s.get("https://www.nseindia.com", headers=headers)  # Set cookies
             response = s.get(url, headers=headers, timeout=10)
+
+            st.warning(response.text)  # debug nse call
+        
             data = response.json()
             symbols = [item['symbol'] + ".NS" for item in data['data']]
             if symbols:
                 return symbols
     except Exception as e:
-        st.warning(e)  # debug nse call
+
         st.warning(f"Could not fetch Nifty 50 symbols dynamically: {e}. Using static list.")
     # Fallback static list
     return [
