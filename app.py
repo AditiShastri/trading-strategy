@@ -27,6 +27,7 @@ def get_nifty50_symbols():
             if symbols:
                 return symbols
     except Exception as e:
+        st.warning(e)  # debug nse call
         st.warning(f"Could not fetch Nifty 50 symbols dynamically: {e}. Using static list.")
     # Fallback static list
     return [
